@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_current_invoice"
+            android:icon="@android:drawable/ic_menu_sort_by_size"
+            android:title="Current Invoice" />
+        <item
+            android:id="@+id/nav_restaurant"
+            android:icon="@drawable/ic_store_mall_directory_24dp"
+            android:title="Add Restaurant" />
+
+        <item
+            android:id="@+id/nav_products"
+            android:icon="@drawable/ic_local_pizza_24dp"
+            android:title="Add Product" />
+    </group>
+
+    <item android:id="@+id/nav_admin"
+        android:checkableBehavior="single"
+        android:title="Admin">
+        <menu>
+            <item
+                android:id="@+id/nav_update"
+                android:icon="@drawable/ic_cloud_upload_24dp"
+                android:title="Update" />
+            <item
+                android:id="@+id/nav_sales"
+                android:icon="@drawable/ic_sales_24dp"
+                android:title="Sales" />
+        </menu>
+    </item>
+
+</menu>
