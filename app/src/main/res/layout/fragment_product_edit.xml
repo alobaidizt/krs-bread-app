@@ -10,15 +10,39 @@
         android:layout_marginTop="?attr/actionBarSize"
         android:orientation="vertical"
         android:paddingLeft="20dp"
-        android:paddingRight="20dp" >
+        android:paddingRight="20dp">
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:paddingTop="5dp"
+            android:text="@string/customer" />
+
+        <LinearLayout
+            android:id="@+id/linearLayout0"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:padding="2dp"
+            android:paddingTop="5dp"
+            android:weightSum="4">
 
 
-    <Spinner
-        android:id="@+id/restaurant_spinner"
-        android:layout_marginBottom="15dp"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-    </Spinner>
+            <AutoCompleteTextView
+                android:id="@+id/autoCompleteTextView1"
+                android:singleLine="true"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_alignLeft="@+id/textView2"
+                android:layout_below="@+id/textView2"
+                android:ems="10" >
+            </AutoCompleteTextView>
+        </LinearLayout>
 
     <android.support.design.widget.TextInputLayout
         android:id="@+id/input_layout_product_name"

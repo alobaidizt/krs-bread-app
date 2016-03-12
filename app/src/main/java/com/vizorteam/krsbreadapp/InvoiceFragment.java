@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 public class InvoiceFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
@@ -110,6 +111,8 @@ public class InvoiceFragment extends Fragment {
             public void onDataChange(DataSnapshot snapshot) {
                 dbSnapshot = snapshot;
                 setRestaurantList();
+                updateData();
+                Toast.makeText(getActivity().getApplicationContext(), "DB updated", Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -128,7 +131,6 @@ public class InvoiceFragment extends Fragment {
         fragmentView = view;
         initTable(view);
 
-//        restaurants = (Spinner) fragmentView.findViewById(R.id.restaurant_spinner);
         restaurants = (AutoCompleteTextView)
                 fragmentView.findViewById(R.id.autoCompleteTextView1);
 
@@ -149,9 +151,6 @@ public class InvoiceFragment extends Fragment {
             }
         });
 
-        final String portName = "BT:KRS Bread A";
-        final String portSettings = "portable;escpos";
-
         invoiceLabel = (TextView) fragmentView.findViewById(R.id.invoice_num_label);
 
         Button btnPrint = (Button) view.findViewById(R.id.btn_print);
@@ -159,7 +158,7 @@ public class InvoiceFragment extends Fragment {
 
             @Override
             public void onClick(View v) {
-                PrintReceipt(getContext(), portName,portSettings);
+                PrintReceipt(getContext(), helpers.portName, helpers.portSettings);
             }
         });
 
@@ -352,41 +351,12 @@ public class InvoiceFragment extends Fragment {
         }
 
     private void setRestaurantList() {
-//        restaurants = (AutoCompleteTextView)
-//                fragmentView.findViewById(R.id.autoCompleteTextView1);
 
         restaurantLabels = new ArrayList<String>();
         HashMap<String, HashMap> data = (HashMap) dbSnapshot.getValue();
         for (String restaurant : data.keySet()) {
             restaurantLabels.add(restaurant);
         }
-
-//        restaurantLabels.add("Select a client");
-//        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(),
-//                android.R.layout.simple_spinner_dropdown_item) {
-//
-//            @Override
-//            public View getView(int position, View convertView, ViewGroup parent) {
-//
-//                View v = super.getView(position, convertView, parent);
-//                if (position == getCount()) {
-//                    ((TextView) v.findViewById(android.R.id.text1)).setText("");
-//                    ((TextView) v.findViewById(android.R.id.text1)).setHint(getItem(getCount())); //"Hint to be displayed"
-//                }
-//
-//                return v;
-//            }
-//
-//            @Override
-//            public int getCount() {
-//                return super.getCount() - 1; // you dont display last item. It is used as hint.
-//            }
-//
-//        };
-
-//        adapter.addAll(restaurantLabels);
-//        restaurants.setAdapter(adapter);
-//        restaurants.setSelection(adapter.getCount()); // display hint
 
         ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<String>
                 (getContext(),android.R.layout.select_dialog_item, restaurantLabels);
@@ -396,8 +366,11 @@ public class InvoiceFragment extends Fragment {
         restaurants.setAdapter(autoCompleteAdapter);
     }
 
-
     private void updateData() {
+        if (selectedRestaurant == null || selectedRestaurant.isEmpty()) {
+            return;
+        }
+
         products = new ArrayList<String>();
         HashMap<String, HashMap> restaurantProducts = (HashMap) dbSnapshot.child(selectedRestaurant).getValue();
         if (restaurantProducts == null) {
@@ -435,7 +408,7 @@ public class InvoiceFragment extends Fragment {
 //        if (true)
 //            return true;
 
-        invoiceStr = "A" + String.format("%07d", invoiceNum);
+        invoiceStr = helpers.getRouteString(getContext()) + String.format("%07d", invoiceNum);
         writeData(invoiceStr);
 
         ArrayList<String> copiesList = new ArrayList<>(Arrays.asList(selectedRestaurant + " Copy", "KRS Bread Copy"));
@@ -609,25 +582,31 @@ public class InvoiceFragment extends Fragment {
                 }
 
             }
-            incrementCounter(product, total);
+            incrementCounter(product, total, qty);
         }
     }
 
-    public void incrementCounter(String product, final double amount) {
+    public void incrementCounter(String product, final double amount, final double qty) {
         String route = helpers.getRouteString(getActivity().getBaseContext());
         Log.d("logging", "Route:  " + route);
+
+        final Map<Object, Object> salesRecord = new HashMap<Object, Object>();
+        salesRecord.put("qty", qty);
+        salesRecord.put("sales", amount);
+
        Firebase dbValue = helpers.getFirebase().child("analytics").child(route).child(product);
         dbValue.runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(final MutableData currentData) {
                 if (currentData.getValue() == null) {
-                    currentData.setValue(amount);
+                    currentData.setValue(salesRecord);
                 }
                 else {
                     Log.d("logging", "current data: " + currentData.toString());
                     Log.d("logging", "current db value: " + currentData.getValue().toString());
                     Log.d("logging", "amount: " + Double.valueOf(amount).toString());
-                    currentData.setValue((double) currentData.getValue() + amount);
+                    currentData.child("sales").setValue((double) currentData.child("sales").getValue() + amount);
+                    currentData.child("qty").setValue((double) currentData.child("qty").getValue() + qty);
                 }
 
                 return Transaction.success(currentData);

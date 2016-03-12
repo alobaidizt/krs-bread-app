@@ -13,6 +13,9 @@ public class helpers {
     private static String routeString;
 
     public static final String DEVICE_CONFIG = "DeviceConfig";
+    public static final String portName = "BT:KRS Bread A";
+    public static final String portSettings = "portable;escpos";
+
 
     public static void setFirebase() {
         krsRef = new Firebase("https://krs-bread-app.firebaseio.com/");

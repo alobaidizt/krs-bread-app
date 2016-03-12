@@ -31,27 +31,47 @@
             android:orientation="horizontal"
             android:gravity="center_horizontal"
             android:paddingTop="5dp"
-            android:layout_weight="1"
             android:weightSum="4">
 
             <Spinner
                 android:id="@+id/route_spinner"
                 android:layout_width="0dp"
+                style="@style/mySpinnerItemStyle"
                 android:layout_height="wrap_content"
                 android:layout_alignLeft="@+id/routes_label"
                 android:layout_below="@+id/routes_label"
-                android:layout_weight="3" >
+                android:layout_weight="4" >
             </Spinner>
+            </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/sales_container_layou2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:orientation="horizontal"
+            android:gravity="center_horizontal"
+            android:layout_weight="1"
+            android:weightSum="4">
 
             <Button android:id="@+id/btn_clear_sales"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Clear Data"
+                android:text="Clear"
+                android:background="@color/colorPrimary"
+                android:textColor="@android:color/white"
+                android:layout_marginRight="8dp"
+                android:layout_weight="2" />
+
+            <Button android:id="@+id/btn_print"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="Print"
                 android:background="@color/colorPrimary"
                 android:textColor="@android:color/white"
                 android:paddingLeft="8dp"
-                android:paddingRight="8dp"
-                android:layout_weight="1" />
+                android:layout_marginLeft="8dp"
+                android:layout_weight="2" />
 
         </LinearLayout>
 

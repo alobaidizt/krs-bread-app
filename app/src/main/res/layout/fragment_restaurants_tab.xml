@@ -9,9 +9,7 @@
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
         android:orientation="vertical"
-        android:paddingLeft="20dp"
-        android:paddingRight="20dp"
-        android:paddingTop="10dp"
+        android:paddingTop="5dp"
         android:weightSum="10">
 
         <TextView
@@ -19,9 +17,10 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:paddingTop="5dp"
-            android:text="Clients" />
+            android:textSize="25sp"
+            android:paddingBottom="2dp"
+            android:text="Clients">
+        </TextView>
 
         <ScrollView
             android:id="@+id/scrollView1"
@@ -32,7 +31,7 @@
             android:scrollbars="none"
             android:descendantFocusability="beforeDescendants"
             android:focusableInTouchMode="true"
-            android:layout_weight="6" >
+            android:layout_weight="9" >
 
             <LinearLayout
                 android:id="@+id/RelativeLayout1"
@@ -44,7 +43,7 @@
                     android:id="@+id/table_main"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:stretchColumns="0"
+                    android:stretchColumns="1"
                     android:isScrollContainer="true"
                     android:layout_centerHorizontal="true" >
                 </TableLayout>

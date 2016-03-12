@@ -205,19 +205,21 @@ public class ProductsTabFragment extends Fragment {
             ImageButton deleteIcon = new ImageButton(getContext());
             tv1.setTextColor(Color.DKGRAY);
             tv1.setGravity(Gravity.LEFT);
+            tv1.setTextSize(20);
             tv1.setText(product);
             deleteIcon.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_action_remove, null));
             deleteIcon.setMaxWidth(1);
+            deleteIcon.setPadding(3,3,3,3);
             deleteIcon.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     TableRow tableRow = (TableRow) view.getParent();
                     salesTable.removeView(tableRow);
-                    krsRef.child("products").child(selectedClient).child(((TextView) tableRow.getChildAt(0)).getText().toString()).removeValue();
+                    krsRef.child("products").child(selectedClient).child(((TextView) tableRow.getChildAt(1)).getText().toString()).removeValue();
                 }
             });
-            tbrow.addView(tv1);
             tbrow.addView(deleteIcon);
+            tbrow.addView(tv1);
             salesTable.addView(tbrow);
         }
     }

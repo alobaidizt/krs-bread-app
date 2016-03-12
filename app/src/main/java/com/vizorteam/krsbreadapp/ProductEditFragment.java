@@ -6,9 +6,12 @@ import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
@@ -43,8 +46,10 @@ public class ProductEditFragment extends Fragment {
     private Firebase krsRef;
     private ArrayList<String> restaurantLabels;
     private ArrayList<Object> restaurantValues;
-    Spinner restaurants;
+    AutoCompleteTextView restaurants;
     private ArrayAdapter<String> restaurantsAdapter;
+    private String selectedRestaurant;
+    DataSnapshot dbSnapshot;
 
     private OnFragmentInteractionListener mListener;
 
@@ -71,47 +76,12 @@ public class ProductEditFragment extends Fragment {
 
 //        Firebase.setAndroidContext(getActivity());
         krsRef = helpers.getFirebase();
-        krsRef.child("restaurants").addValueEventListener(new ValueEventListener() {
+        krsRef.child("products").addValueEventListener(new ValueEventListener() {
 
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-                restaurantLabels = new ArrayList<String>();
-                restaurantValues = new ArrayList<Object>();
-                HashMap<String, JSONObject> data = (HashMap) snapshot.getValue();  //prints "Do you have data? You'll love Firebase."
-                for (String key : data.keySet()) {
-                    restaurantLabels.add(key);
-                    restaurantValues.add(data.get(key));
-                }
-
-                restaurantLabels.add("Select a client");
-                restaurantsAdapter = new ArrayAdapter<String>(getContext(),
-                        android.R.layout.simple_spinner_item) {
-
-                    @Override
-                    public View getView(int position, View convertView, ViewGroup parent) {
-
-                        View v = super.getView(position, convertView, parent);
-                        if (position == getCount()) {
-                            ((TextView) v.findViewById(android.R.id.text1)).setText("");
-                            ((TextView) v.findViewById(android.R.id.text1)).setHint(getItem(getCount())); //"Hint to be displayed"
-                        }
-
-                        return v;
-                    }
-
-                    @Override
-                    public int getCount() {
-                        return super.getCount() - 1; // you dont display last item. It is used as hint.
-                    }
-
-                };
-
-                restaurantsAdapter.addAll(restaurantLabels);
-                if (restaurants != null) {
-                    restaurants.setAdapter(restaurantsAdapter);
-                    restaurants.setSelection(restaurantsAdapter.getCount()); // display hint
-                }
-
+                dbSnapshot = snapshot;
+                setRestaurantList();
             }
 
             @Override
@@ -126,10 +96,24 @@ public class ProductEditFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_product_edit, container, false);
         fragmentView = view;
 
-        restaurants = (Spinner) fragmentView.findViewById(R.id.restaurant_spinner);
+        restaurants = (AutoCompleteTextView)
+                fragmentView.findViewById(R.id.autoCompleteTextView1);
 
-//        restaurants.setAdapter(restaurantsAdapter);
-//        restaurants.setSelection(restaurantsAdapter.getCount()); // display hint
+        restaurants.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                restaurants.showDropDown();
+                return false;
+            }
+        });
+
+
+        restaurants.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View arg1, int pos, long id) {
+                selectedRestaurant = (String) parent.getItemAtPosition(pos);
+            }
+        });
 
         inputLayoutName = (TextInputLayout) view.findViewById(R.id.input_layout_product_name);
         inputLayoutPrice = (TextInputLayout) view.findViewById(R.id.input_layout_product_price);
@@ -173,22 +157,36 @@ public class ProductEditFragment extends Fragment {
 
 
     public void addProduct(View view) {
-        String restaurant = restaurants.getSelectedItem().toString();
-        Firebase products = krsRef.child("products").child(restaurant).child(inputName.getText().toString());
-        Map<Object, Object> productDetails = new HashMap<Object, Object>();
         if (inputPrice.getText().toString().isEmpty()) {
             Toast.makeText(getActivity().getApplicationContext(), "Value not Entered", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        Firebase products = krsRef.child("products").child(selectedRestaurant).child(inputName.getText().toString());
+        Map<Object, Object> productDetails = new HashMap<Object, Object>();
         productDetails.put("name", inputName.getText().toString());
         productDetails.put("price", Double.parseDouble(inputPrice.getText().toString()));
         products.setValue(productDetails);
-        Toast.makeText(getActivity().getApplicationContext(), "Product Added to " + restaurant + "!", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getActivity().getApplicationContext(), "Product Added to " + selectedRestaurant + "!", Toast.LENGTH_SHORT).show();
 
     }
 
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
+    }
+
+    private void setRestaurantList() {
+        restaurantLabels = new ArrayList<String>();
+        HashMap<String, HashMap> data = (HashMap) dbSnapshot.getValue();
+        for (String restaurant : data.keySet()) {
+            restaurantLabels.add(restaurant);
+        }
+
+        ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<String>
+                (getContext(),android.R.layout.select_dialog_item, restaurantLabels);
+
+        restaurants.setThreshold(0);
+        restaurants.setAdapter(autoCompleteAdapter);
     }
 }
