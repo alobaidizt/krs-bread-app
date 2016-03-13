@@ -65,7 +65,7 @@ public class AdminSalesFragment extends Fragment {
     private int invoiceNum;
     private String invoiceStr;
     private Spinner routes;
-    private MainActivity mainActivity;
+    private double salesTotal;
     DataSnapshot dbSnapshot;
     private List<String> routesList;
     TableLayout salesTable;
@@ -265,7 +265,8 @@ public class AdminSalesFragment extends Fragment {
         if (restaurantProducts == null) {
             return;
         }
-//        productPriceHash = new HashMap<String, Double>();
+
+        salesTotal = 0;
         for (String product : restaurantProducts.keySet()) {
             int i = 1;
             TableRow tbrow = new TableRow(getContext());
@@ -285,13 +286,17 @@ public class AdminSalesFragment extends Fragment {
             tbrow.addView(tv2);
             tbrow.addView(tv3);
             salesTable.addView(tbrow);
+            salesTotal += Double.parseDouble(restaurantProducts.get(product).get("sales").toString());
             Log.d("logging", product);
             Log.d("logging", restaurantProducts.get(product).toString());
         }
+        ((TextView)fragmentView.findViewById(R.id.sales_tatal)).setText("Sales Total $" + String.format("%.2f", salesTotal));
     }
 
     private void clearAnalytics() {
-        helpers.getFirebase().child("analytics").setValue(null);
+        helpers.getFirebase().child("analytics").child(selectedRoute).setValue(null);
+        salesTotal = 0;
+        ((TextView)fragmentView.findViewById(R.id.sales_tatal)).setText("Sales Total $" + String.format("%.2f", salesTotal));
     }
 
     /**
@@ -322,12 +327,18 @@ public class AdminSalesFragment extends Fragment {
 
             list.add(new byte[] { 0x1b, 0x61, 0x00 }); // Left Alignment
 
-            list.add(new byte[] { 0x1b, 0x44, 0x02, 0x07, 0x22, 0x00 }); // Setting Horizontal Tab
+            list.add(new byte[] { 0x1b, 0x44, 0x02, 0x22, 0x00 }); // Setting Horizontal Tab
 
             list.add(("Date: " + date + " ").getBytes());
 
 
             list.add(new byte[]{0x1b, 0x45, 0x00}); // Set Emphasized Printing OFF (same command as on)
+
+            list.add(new byte[] { 0x1b, 0x61, 0x01 }); // Center Alignment
+            list.add(("\n\nsales").getBytes());
+
+            list.add(new byte[] { 0x1b, 0x61, 0x00 }); // Left Alignment
+            list.add(("\n------------------------------------------------\n\n").getBytes());
 
             // This uses iterator behind the scene.
             for (ArrayList<String> row : salesData)
@@ -357,10 +368,15 @@ public class AdminSalesFragment extends Fragment {
                 list.add(("\n").getBytes());
             }
 
+            list.add(new byte[] { 0x1d, 0x21, 0x11 }); // Width and Height Character Expansion <GS> ! n
+
+            list.add(new byte[] { 0x1b, 0x61, 0x02 }); // Right Alignment
+            list.add(("$" + String.format("%.2f", salesTotal) + "\n").getBytes());
+
             list.add(new byte[] { 0x1d, 0x21, 0x00 }); // Cancel Expansion - Reference Star Portable Printer Programming Manual
 
             list.add(new byte[] { 0x1b, 0x61, 0x00 }); // Left Alignment
-            list.add(("------------------------------------------------ \n").getBytes());
+            list.add(("\n------------------------------------------------").getBytes());
 
             list.add("\n\n\n\n".getBytes());
             return MiniPrinterFunctions.sendCommand(context, portName, portSettings, list);
@@ -384,11 +400,6 @@ public class AdminSalesFragment extends Fragment {
                             fieldValue= textView.getText().toString();
                             break;
                     }
-//                    if (k == 3 && i > 0 && fieldValue != "") {
-//                    String priceStr = fieldValue.replace("$", "");
-//                    double itemTotal = Double.parseDouble(priceStr);
-//                    invoiceTotal += itemTotal;
-//                    }
                     salesData.get(tableRowIndex).add(fieldValue);
                 }
                 tableRowIndex++;

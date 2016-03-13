@@ -19,7 +19,7 @@
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
             android:paddingTop="5dp"
-            android:text="@string/customer" />
+            android:text="Client" />
 
         <LinearLayout
             android:id="@+id/linearLayout0"

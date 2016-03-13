@@ -50,11 +50,7 @@ public class MainActivity extends AppCompatActivity
 
     private FragmentManager fm;
     private Fragment invoiceFragment;
-//    private Firebase krsRef;
     private String routeString;
-//    public static final String DEVICE_CONFIG = "DeviceConfig";
-//    public JobScheduler mJobScheduler;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,11 +61,6 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-//        findViewById(R.id.image_background).setVisibility(View.VISIBLE);
-
-        // Restore preferences
-//        SharedPreferences settings = getSharedPreferences(DEVICE_CONFIG, 0);
-//        routeString = settings.getString("route", "");
 
         routeString = helpers.getRouteString(getBaseContext());
 
@@ -153,12 +144,8 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -169,7 +156,6 @@ public class MainActivity extends AppCompatActivity
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
         int id = item.getItemId();
 
         if (routeString.isEmpty()) {
@@ -180,7 +166,6 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_current_invoice) {
             this.findViewById(R.id.home_fragment).setVisibility(View.GONE);
-//            this.findViewById(R.id.image_background).setVisibility(View.GONE);
             this.findViewById(R.id.invoice_fragment).setVisibility(View.VISIBLE);
             FragmentTransaction ft = fm.beginTransaction();
             if (invoiceFragment != null) {
@@ -190,20 +175,16 @@ public class MainActivity extends AppCompatActivity
                 ft.add(R.id.invoice_fragment, invoiceFragment).addToBackStack("invoice").commit();
             }
 
-//            Intent myIntent = new Intent(this, TestActivity.class);
-//            startActivityFromChild(this, myIntent, 0);
 
         } else if (id == R.id.nav_restaurant) {
             this.findViewById(R.id.home_fragment).setVisibility(View.VISIBLE);
             this.findViewById(R.id.invoice_fragment).setVisibility(View.GONE);
-//            this.findViewById(R.id.image_background).setVisibility(View.GONE);
             FragmentTransaction ft = fm.beginTransaction();
             ft.replace(R.id.home_fragment, new RestaurntEditFragment()).addToBackStack("home").commit();
 
         } else if (id == R.id.nav_products) {
             this.findViewById(R.id.home_fragment).setVisibility(View.VISIBLE);
             this.findViewById(R.id.invoice_fragment).setVisibility(View.GONE);
-//            this.findViewById(R.id.image_background).setVisibility(View.GONE);
             FragmentTransaction ft = fm.beginTransaction();
             ft.replace(R.id.home_fragment, new ProductEditFragment()).addToBackStack("home").commit();
 
@@ -217,7 +198,6 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_sales) {
             this.findViewById(R.id.home_fragment).setVisibility(View.VISIBLE);
             this.findViewById(R.id.invoice_fragment).setVisibility(View.GONE);
-//            this.findViewById(R.id.image_background).setVisibility(View.GONE);
             FragmentTransaction ft = fm.beginTransaction();
             ft.replace(R.id.home_fragment, new AdminSalesFragment()).addToBackStack("home").commit();
 
@@ -231,7 +211,6 @@ public class MainActivity extends AppCompatActivity
     public void startNewInvoice(View view) {
 
         this.findViewById(R.id.home_fragment).setVisibility(View.GONE);
-//        this.findViewById(R.id.image_background).setVisibility(View.GONE);
         this.findViewById(R.id.invoice_fragment).setVisibility(View.VISIBLE);
         FragmentTransaction ft = fm.beginTransaction();
         if (invoiceFragment != null) {
@@ -247,14 +226,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void PrintText(View view) {
-        /*if (!checkClick.isClickEvent()) {
-            return;
-        }*/
-
-//        String portName = PrinterTypeActivity.getPortName();
-//        String portSettings = PrinterTypeActivity.getPortSettings();
-
-
 
         String portName = "BT:KRS Bread A";
         String portSettings = "portable;escpos";

@@ -54,12 +54,8 @@ import java.util.Map;
 
 public class InvoiceFragment extends Fragment {
     // TODO: Rename parameter arguments, choose names that match
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-    private String mParam1;
-    private String mParam2;
 
-    View fragmentView;
+    private View fragmentView;
     TableLayout invoiceTable;
 
     private OnFragmentInteractionListener mListener;
@@ -67,7 +63,6 @@ public class InvoiceFragment extends Fragment {
     private ArrayList<String> products;
     private HashMap<String, Double> productPriceHash;
     DataSnapshot dbSnapshot;
-//    Spinner restaurants;
     String selectedRestaurant;
     private ArrayList<ArrayList<String>> recieptData;
     private double invoiceTotal;
@@ -75,8 +70,8 @@ public class InvoiceFragment extends Fragment {
     private TextView invoiceLabel;
     private String invoiceStr;
     private AutoCompleteTextView restaurants;
-//    private MainActivity mainActivity;
     private Firebase krsRef;
+    private String routeString;
 
     public InvoiceFragment() {
     }
@@ -85,8 +80,6 @@ public class InvoiceFragment extends Fragment {
     public static InvoiceFragment newInstance(String param1, String param2) {
         InvoiceFragment fragment = new InvoiceFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
     }
@@ -94,17 +87,9 @@ public class InvoiceFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
-
-//        helpers helper = new helpers();
         krsRef = helpers.getFirebase();
+        routeString = helpers.getRouteString(getContext());
 
-//        mainActivity = ((MainActivity) getActivity());
-//        ((krsApp)).initFirebase();
-//        mainActivity.getKrsRef().child("products").addValueEventListener(new ValueEventListener() {
         krsRef.child("products").addValueEventListener(new ValueEventListener() {
 
             @Override
@@ -112,7 +97,6 @@ public class InvoiceFragment extends Fragment {
                 dbSnapshot = snapshot;
                 setRestaurantList();
                 updateData();
-                Toast.makeText(getActivity().getApplicationContext(), "DB updated", Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -120,16 +104,13 @@ public class InvoiceFragment extends Fragment {
             }
 
         });
-
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_invoice, container, false);
-        fragmentView = view;
-        initTable(view);
+        fragmentView = inflater.inflate(R.layout.fragment_invoice, container, false);
+        initTable(fragmentView);
 
         restaurants = (AutoCompleteTextView)
                 fragmentView.findViewById(R.id.autoCompleteTextView1);
@@ -142,7 +123,6 @@ public class InvoiceFragment extends Fragment {
             }
         });
 
-
         restaurants.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View arg1, int pos, long id) {
@@ -153,7 +133,7 @@ public class InvoiceFragment extends Fragment {
 
         invoiceLabel = (TextView) fragmentView.findViewById(R.id.invoice_num_label);
 
-        Button btnPrint = (Button) view.findViewById(R.id.btn_print);
+        Button btnPrint = (Button) fragmentView.findViewById(R.id.btn_print);
         btnPrint.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -162,7 +142,7 @@ public class InvoiceFragment extends Fragment {
             }
         });
 
-        Button btnAdd = (Button) view.findViewById(R.id.btn_add);
+        Button btnAdd = (Button) fragmentView.findViewById(R.id.btn_add);
         btnAdd.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -170,22 +150,23 @@ public class InvoiceFragment extends Fragment {
                 addItem(v);
             }
         });
-        return view;
+
+        return fragmentView;
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (StringUtils.isNotBlank(readSavedData())) {
-            invoiceNum = Integer.parseInt(readSavedData().substring(1));
+        if (StringUtils.isNotBlank(helpers.readSavedData(getContext()))) {
+            invoiceNum = Integer.parseInt(helpers.readSavedData(getContext()).substring(1));
         } else {
             invoiceNum = 0;
         }
         if (StringUtils.isBlank(Integer.valueOf(invoiceNum).toString())) {
-            writeData("A0000000");
-            invoiceNum = Integer.parseInt(readSavedData());
+            helpers.writeData(getContext(), routeString + String.format("%07d", invoiceNum));
+            invoiceNum = Integer.parseInt(helpers.readSavedData(getContext()));
         }
-        invoiceStr = "A" + String.format("%07d", invoiceNum);
+        invoiceStr = routeString + String.format("%07d", invoiceNum);
         invoiceLabel.setText(invoiceStr);
     }
 
@@ -312,8 +293,6 @@ public class InvoiceFragment extends Fragment {
 
         public qtyWatcher(EditText et, TextView tv, TextView priceView) {
 
-            Log.d(getResources().getString(R.string.logging), et.getText().toString());
-
             this.tv = tv;
             this.et = et;
             this.priceView = priceView;
@@ -403,13 +382,14 @@ public class InvoiceFragment extends Fragment {
             return true;
         }
         boolean isGood = false;
+        ((Button)fragmentView.findViewById(R.id.btn_print)).setBackgroundColor(Color.GRAY);
+        Toast.makeText(getActivity(), "Changed Color",
+                Toast.LENGTH_LONG).show();
         loopTable();
         updateAnalytics();
-//        if (true)
-//            return true;
 
-        invoiceStr = helpers.getRouteString(getContext()) + String.format("%07d", invoiceNum);
-        writeData(invoiceStr);
+        invoiceStr = routeString + String.format("%07d", invoiceNum);
+        helpers.writeData(getContext(), invoiceStr);
 
         ArrayList<String> copiesList = new ArrayList<>(Arrays.asList(selectedRestaurant + " Copy", "KRS Bread Copy"));
         for (int i=0; i<2; i++) {
@@ -503,9 +483,11 @@ public class InvoiceFragment extends Fragment {
         }
 
         invoiceNum++;
-        invoiceStr = "A" + String.format("%07d", invoiceNum);
-        writeData(invoiceStr);
+        invoiceStr = routeString + String.format("%07d", invoiceNum);
+        helpers.writeData(getContext(), invoiceStr);
         invoiceLabel.setText(invoiceStr);
+
+        ((Button)fragmentView.findViewById(R.id.btn_print)).setBackgroundResource(R.color.colorPrimary);
         return isGood;
     }
 
@@ -556,15 +538,12 @@ public class InvoiceFragment extends Fragment {
         String product = "unaccounted";
         price = 0; qty = 0; total = 0;
         int rowIndex = 0;
-        Log.d(getResources().getString(R.string.logging), selectedRestaurant);
         for (ArrayList<String> row : recieptData) {
             int index = 0;
             if (rowIndex++ == 0) continue;
             for (String element : row) {
                 index++;
                 int itemIndex = index % 4;
-                Log.d(getResources().getString(R.string.logging), Integer.valueOf(itemIndex).toString());
-                Log.d(getResources().getString(R.string.logging), element);
                 switch (itemIndex) {
                     case 1:
                         if (element.isEmpty()) { break;}
@@ -587,14 +566,13 @@ public class InvoiceFragment extends Fragment {
     }
 
     public void incrementCounter(String product, final double amount, final double qty) {
-        String route = helpers.getRouteString(getActivity().getBaseContext());
-        Log.d("logging", "Route:  " + route);
 
         final Map<Object, Object> salesRecord = new HashMap<Object, Object>();
+
         salesRecord.put("qty", qty);
         salesRecord.put("sales", amount);
 
-       Firebase dbValue = helpers.getFirebase().child("analytics").child(route).child(product);
+       Firebase dbValue = helpers.getFirebase().child("analytics").child(routeString).child(product);
         dbValue.runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(final MutableData currentData) {
@@ -602,9 +580,6 @@ public class InvoiceFragment extends Fragment {
                     currentData.setValue(salesRecord);
                 }
                 else {
-                    Log.d("logging", "current data: " + currentData.toString());
-                    Log.d("logging", "current db value: " + currentData.getValue().toString());
-                    Log.d("logging", "amount: " + Double.valueOf(amount).toString());
                     currentData.child("sales").setValue((double) currentData.child("sales").getValue() + amount);
                     currentData.child("qty").setValue((double) currentData.child("qty").getValue() + qty);
                 }
@@ -623,35 +598,4 @@ public class InvoiceFragment extends Fragment {
         });
     }
 
-    public void writeData ( String data ) {
-        try {
-            FileOutputStream fOut = getContext().openFileOutput("KRS_DATA.dat", getContext().MODE_PRIVATE) ;
-            OutputStreamWriter osw = new OutputStreamWriter ( fOut ) ;
-            osw.write ( data ) ;
-            osw.flush ( ) ;
-            osw.close ( ) ;
-        } catch ( Exception e ) {
-            e.printStackTrace ( ) ;
-        }
-    }
-
-    public String readSavedData ( ) {
-        StringBuffer datax = new StringBuffer("");
-        try {
-            FileInputStream fIn = getContext().openFileInput("KRS_DATA.dat") ;
-            InputStreamReader isr = new InputStreamReader ( fIn ) ;
-            BufferedReader buffreader = new BufferedReader ( isr ) ;
-
-            String readString = buffreader.readLine ( ) ;
-            while ( readString != null ) {
-                datax.append(readString);
-                readString = buffreader.readLine ( ) ;
-            }
-
-            isr.close ( ) ;
-        } catch ( IOException ioe ) {
-            ioe.printStackTrace ( ) ;
-        }
-        return datax.toString() ;
-    }
 }
