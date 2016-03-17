@@ -44,9 +44,9 @@ import java.text.SimpleDateFormat;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         InvoiceFragment.OnFragmentInteractionListener, RestaurntEditFragment.OnFragmentInteractionListener,
-        ItemFragment.OnListFragmentInteractionListener, ProductEditFragment.OnFragmentInteractionListener,
         AdminSalesFragment.OnFragmentInteractionListener, AdminUpdateFragment.OnFragmentInteractionListener,
-        RestaurantsTabFragment.OnFragmentInteractionListener, ProductsTabFragment.OnFragmentInteractionListener {
+        RestaurantsTabFragment.OnFragmentInteractionListener, ProductsTabFragment.OnFragmentInteractionListener,
+        ProductEditFragment.OnFragmentInteractionListener {
 
     private FragmentManager fm;
     private Fragment invoiceFragment;
@@ -222,9 +222,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void onFrragmentInteraction (Uri uri) {
-    }
-
     public void PrintText(View view) {
 
         String portName = "BT:KRS Bread A";
@@ -239,24 +236,5 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onFragmentInteraction(Uri uri) {
-    }
-
-    private void clearBackStack(int i) {
-        Log.e("fragment Id: ", Integer.toString(i));
-        if (fm.getFragments() == null) {
-            return;
-        }
-        int count = fm.getFragments().size();
-        Log.e("fragments count: ", Integer.toString(fm.getFragments().size()));
-        if (fm.getFragments().size() > 0) {
-            Log.e("coun before poping: ", Integer.toString(fm.getFragments().size()));
-            fm.popBackStack();
-            Log.e("coun after poping: ", Integer.toString(fm.getFragments().size()));
-        }
-    }
-
-    @Override
-    public void onListFragmentInteraction(DummyContent.DummyItem item) {
-
     }
 }

@@ -1,9 +1,7 @@
 package com.vizorteam.krsbreadapp;
 
-import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
@@ -21,7 +19,6 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
@@ -39,12 +36,6 @@ import com.firebase.client.ValueEventListener;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,7 +44,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class InvoiceFragment extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
 
     private View fragmentView;
     TableLayout invoiceTable;
@@ -76,7 +66,6 @@ public class InvoiceFragment extends Fragment {
     public InvoiceFragment() {
     }
 
-    // TODO: Rename and change types and number of parameters
     public static InvoiceFragment newInstance(String param1, String param2) {
         InvoiceFragment fragment = new InvoiceFragment();
         Bundle args = new Bundle();
@@ -303,6 +292,11 @@ public class InvoiceFragment extends Fragment {
 
                 int qtyValue;
                 String priceStr = priceView.getText().toString().replace("$","");
+                if (priceStr.isEmpty()) {
+                    Toast.makeText(getActivity(), "No Price Found",
+                            Toast.LENGTH_LONG).show();
+                    return;
+                }
                 double price = Double.parseDouble(priceStr);
                 if (Double.isNaN(price)) {
                     price = 0;
@@ -333,6 +327,13 @@ public class InvoiceFragment extends Fragment {
 
         restaurantLabels = new ArrayList<String>();
         HashMap<String, HashMap> data = (HashMap) dbSnapshot.getValue();
+
+        if (data == null) {
+            Toast.makeText(getActivity(), "Add Product to a Client First",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
         for (String restaurant : data.keySet()) {
             restaurantLabels.add(restaurant);
         }
@@ -357,24 +358,15 @@ public class InvoiceFragment extends Fragment {
         }
             productPriceHash = new HashMap<String, Double>();
             for (String product : restaurantProducts.keySet()) {
-                products.add(product);
+                String productName = restaurantProducts.get(product).get("name").toString();
                 double price = 0;
                 price = Double.parseDouble(restaurantProducts.get(product).get("price").toString());
-                productPriceHash.put(product, price);
+                products.add(productName);
+                productPriceHash.put(productName, price);
             }
         }
 
 
-    /**
-     * This function shows how to read the MSR data(credit card) of a portable(ESC/POS) printer. The function first puts the printer into MSR read mode, then asks the user to swipe a credit card The function waits for a response from the user. The user can cancel MSR mode or have the printer read the card.
-     *
-     * @param context
-     *     Activity for displaying messages to the user
-     * @param portName
-     *     Port name to use for communication. This should be (TCP:<IPAddress> or BT:<Device pair name>)
-     * @param portSettings
-     *     Should be portable;escpos, the port settings portable;escpos is used for portable(ESC/POS) printers
-     */
     public boolean PrintReceipt(Context context, String portName, String portSettings) {
         if (selectedRestaurant == "Select a client") {
             Toast.makeText(getActivity(), "Please select a restaurant",
@@ -382,9 +374,6 @@ public class InvoiceFragment extends Fragment {
             return true;
         }
         boolean isGood = false;
-        ((Button)fragmentView.findViewById(R.id.btn_print)).setBackgroundColor(Color.GRAY);
-        Toast.makeText(getActivity(), "Changed Color",
-                Toast.LENGTH_LONG).show();
         loopTable();
         updateAnalytics();
 
@@ -424,7 +413,6 @@ public class InvoiceFragment extends Fragment {
 
                 list.add(new byte[]{0x1b, 0x45, 0x00}); // Set Emphasized Printing OFF (same command as on)
 
-                // This uses iterator behind the scene.
                 for (ArrayList<String> row : recieptData)
                 {
                     int index = 0;
@@ -455,7 +443,7 @@ public class InvoiceFragment extends Fragment {
                 list.add(new byte[] { 0x1d, 0x21, 0x11 }); // Width and Height Character Expansion <GS> ! n
 
                 list.add(new byte[] { 0x1b, 0x61, 0x02 }); // Right Alignment
-                list.add(("$" + invoiceTotal + "\n\n").getBytes());
+                list.add(("$" + String.format("%.2f", invoiceTotal) + "\n\n").getBytes());
 
                 list.add(new byte[] { 0x1d, 0x21, 0x00 }); // Cancel Expansion - Reference Star Portable Printer Programming Manual
 
@@ -487,7 +475,6 @@ public class InvoiceFragment extends Fragment {
         helpers.writeData(getContext(), invoiceStr);
         invoiceLabel.setText(invoiceStr);
 
-        ((Button)fragmentView.findViewById(R.id.btn_print)).setBackgroundResource(R.color.colorPrimary);
         return isGood;
     }
 
@@ -514,6 +501,11 @@ public class InvoiceFragment extends Fragment {
                            break;
                        case "Spinner":
                            Spinner spinnerView = (Spinner) field;
+                           if (spinnerView.getSelectedItem() == null) {
+                               Toast.makeText(getActivity(), "Invalid Item! Please remove the invalid Item",
+                                       Toast.LENGTH_LONG).show();
+                               return;
+                           }
                            fieldValue = spinnerView.getSelectedItem().toString();
                            break;
                        case "TextInputLayout":
@@ -535,7 +527,8 @@ public class InvoiceFragment extends Fragment {
 
     public void updateAnalytics() {
         double qty, price, total;
-        String product = "unaccounted";
+        String productId = null;
+        String productName = "unaccounted";
         price = 0; qty = 0; total = 0;
         int rowIndex = 0;
         for (ArrayList<String> row : recieptData) {
@@ -550,7 +543,7 @@ public class InvoiceFragment extends Fragment {
                         qty = Double.parseDouble(element.toString());
                         break;
                     case 2:
-                        product = element.toString();
+                        productName = element.toString();
                         break;
                     case 3:
                         price = Double.parseDouble(element.toString().replace("$", ""));
@@ -561,18 +554,31 @@ public class InvoiceFragment extends Fragment {
                 }
 
             }
-            incrementCounter(product, total, qty);
+            DataSnapshot parentRestaurant = dbSnapshot.child(selectedRestaurant);
+            for (DataSnapshot child : parentRestaurant.getChildren()){
+                if (child.child("name").getValue().toString().equals(productName)){
+                    productId = child.getKey();
+                }
+            }
+            if (productId == null) {
+                Toast.makeText(getActivity(), "Product Not Found in Database",
+                        Toast.LENGTH_LONG).show();
+            } else {
+                incrementCounter(productId, total, qty, productName);
+            }
         }
     }
 
-    public void incrementCounter(String product, final double amount, final double qty) {
+    public void incrementCounter(String product, final double amount, final double qty,
+                                 final String productName) {
 
         final Map<Object, Object> salesRecord = new HashMap<Object, Object>();
 
+        salesRecord.put("name", productName);
         salesRecord.put("qty", qty);
         salesRecord.put("sales", amount);
 
-       Firebase dbValue = helpers.getFirebase().child("analytics").child(routeString).child(product);
+        Firebase dbValue = helpers.getFirebase().child("analytics").child(routeString).child(product);
         dbValue.runTransaction(new Transaction.Handler() {
             @Override
             public Transaction.Result doTransaction(final MutableData currentData) {
@@ -580,12 +586,15 @@ public class InvoiceFragment extends Fragment {
                     currentData.setValue(salesRecord);
                 }
                 else {
+                    currentData.child("name").setValue(productName);
                     currentData.child("sales").setValue((double) currentData.child("sales").getValue() + amount);
                     currentData.child("qty").setValue((double) currentData.child("qty").getValue() + qty);
                 }
 
                 return Transaction.success(currentData);
             }
+
+
 
             @Override
             public void onComplete(FirebaseError firebaseError, boolean committed, DataSnapshot currentData) {

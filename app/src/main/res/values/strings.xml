@@ -32,4 +32,6 @@
     <string name="toast_select_restaurant">Please select a restaurant</string>
     <string name="logging">"Logging: "</string>
     <string name="customer">Customer</string>
+    <string name="add_restaurant_validator">Please Add a Restaurant First!</string>
+    <string name="products_validator">No Products found</string>
 </resources>

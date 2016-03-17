@@ -4,32 +4,22 @@ import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
-import android.text.InputType;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.firebase.client.DataSnapshot;
-import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
-
-import org.apache.commons.lang3.StringUtils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -39,31 +29,12 @@ import java.util.HashMap;
 import java.util.List;
 
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link AdminSalesFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link AdminSalesFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
 public class AdminSalesFragment extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
-
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
 
     private OnFragmentInteractionListener mListener;
 
     String selectedRoute;
     private View fragmentView;
-    private double invoiceTotal;
-    private int invoiceNum;
-    private String invoiceStr;
     private Spinner routes;
     private double salesTotal;
     DataSnapshot dbSnapshot;
@@ -72,23 +43,11 @@ public class AdminSalesFragment extends Fragment {
     private ArrayList<ArrayList<String>> salesData;
 
     public AdminSalesFragment() {
-        // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment AdminSalesFragment.
-     */
-    // TODO: Rename and change types and number of parameters
     public static AdminSalesFragment newInstance(String param1, String param2) {
         AdminSalesFragment fragment = new AdminSalesFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
     }
@@ -96,14 +55,7 @@ public class AdminSalesFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
 
-        Firebase.setAndroidContext(getActivity());
-
-//        mainActivity = ((MainActivity) getActivity());
         helpers.getFirebase().child("analytics").addValueEventListener(new ValueEventListener() {
 
             @Override
@@ -123,12 +75,10 @@ public class AdminSalesFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_admin_sales, container, false);
         fragmentView = view;
         initTable(view);
 
-//        restaurants = (Spinner) fragmentView.findViewById(R.id.restaurant_spinner);
         routes = (Spinner)
                 fragmentView.findViewById(R.id.route_spinner);
 
@@ -137,8 +87,6 @@ public class AdminSalesFragment extends Fragment {
                 R.layout.spinner_item, routesList);
 
         routes.setAdapter(routesAdapter);
-
-
         routes.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
 
@@ -148,7 +96,6 @@ public class AdminSalesFragment extends Fragment {
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                // sometimes you need nothing here
             }
         });
 
@@ -173,7 +120,6 @@ public class AdminSalesFragment extends Fragment {
         return view;
     }
 
-    // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
             mListener.onFragmentInteraction(uri);
@@ -197,18 +143,7 @@ public class AdminSalesFragment extends Fragment {
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
     }
 
@@ -267,7 +202,10 @@ public class AdminSalesFragment extends Fragment {
         }
 
         salesTotal = 0;
-        for (String product : restaurantProducts.keySet()) {
+        for (String id : restaurantProducts.keySet()) {
+            String productName = restaurantProducts.get(id).get("name").toString();
+            String productQuantity = restaurantProducts.get(id).get("qty").toString();
+            String productSales = "$" + String.format("%.2f", (double) restaurantProducts.get(id).get("sales"));
             int i = 1;
             TableRow tbrow = new TableRow(getContext());
             TextView tv1 = new TextView(getContext());
@@ -275,20 +213,18 @@ public class AdminSalesFragment extends Fragment {
             TextView tv3 = new TextView(getContext());
             tv1.setTextColor(Color.DKGRAY);
             tv1.setGravity(Gravity.LEFT);
-            tv1.setText(product);
+            tv1.setText(productName);
             tv2.setTextColor(Color.DKGRAY);
             tv2.setGravity(Gravity.CENTER);
-            tv2.setText(restaurantProducts.get(product).get("qty").toString());
+            tv2.setText(productQuantity);
             tv3.setTextColor(Color.DKGRAY);
             tv3.setGravity(Gravity.CENTER);
-            tv3.setText("$" + restaurantProducts.get(product).get("sales").toString());
+            tv3.setText(productSales);
             tbrow.addView(tv1);
             tbrow.addView(tv2);
             tbrow.addView(tv3);
             salesTable.addView(tbrow);
-            salesTotal += Double.parseDouble(restaurantProducts.get(product).get("sales").toString());
-            Log.d("logging", product);
-            Log.d("logging", restaurantProducts.get(product).toString());
+            salesTotal += Double.parseDouble(restaurantProducts.get(id).get("sales").toString());
         }
         ((TextView)fragmentView.findViewById(R.id.sales_tatal)).setText("Sales Total $" + String.format("%.2f", salesTotal));
     }
@@ -299,16 +235,6 @@ public class AdminSalesFragment extends Fragment {
         ((TextView)fragmentView.findViewById(R.id.sales_tatal)).setText("Sales Total $" + String.format("%.2f", salesTotal));
     }
 
-    /**
-     * This function shows how to read the MSR data(credit card) of a portable(ESC/POS) printer. The function first puts the printer into MSR read mode, then asks the user to swipe a credit card The function waits for a response from the user. The user can cancel MSR mode or have the printer read the card.
-     *
-     * @param context
-     *     Activity for displaying messages to the user
-     * @param portName
-     *     Port name to use for communication. This should be (TCP:<IPAddress> or BT:<Device pair name>)
-     * @param portSettings
-     *     Should be portable;escpos, the port settings portable;escpos is used for portable(ESC/POS) printers
-     */
     public boolean PrintSales(Context context, String portName, String portSettings) {
         loopTable();
 
@@ -340,7 +266,6 @@ public class AdminSalesFragment extends Fragment {
             list.add(new byte[] { 0x1b, 0x61, 0x00 }); // Left Alignment
             list.add(("\n------------------------------------------------\n\n").getBytes());
 
-            // This uses iterator behind the scene.
             for (ArrayList<String> row : salesData)
             {
                 int index = 0;
@@ -356,9 +281,6 @@ public class AdminSalesFragment extends Fragment {
                             list.add(element.getBytes());
                             list.add(new byte[] { 0x09}); // Setting Horizontal Tab
                             break;
-//                        case 2:
-//                            list.add((element).getBytes());
-//                            break;
                         case 2:
                             list.add(new byte[] { 0x1b, 0x61, 0x02 }); // Right Alignment
                             list.add((element).getBytes());

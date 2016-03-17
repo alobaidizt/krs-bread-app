@@ -21,6 +21,7 @@ import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
@@ -171,6 +172,12 @@ public class ProductsTabFragment extends Fragment {
 
         clientsLabels = new ArrayList<String>();
         HashMap<String, HashMap> data = (HashMap) dbSnapshot.getValue();
+
+        if (data == null) {
+            Toast.makeText(getActivity().getBaseContext(), R.string.products_validator,
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
         for (String restaurant : data.keySet()) {
             clientsLabels.add(restaurant);
         }
@@ -195,10 +202,13 @@ public class ProductsTabFragment extends Fragment {
             restaurantProducts = (HashMap) dbSnapshot.child(selectedClient).getValue();
         }
         if (restaurantProducts == null) {
+            Toast.makeText(getActivity(), R.string.products_validator,
+                    Toast.LENGTH_LONG).show();
             return;
         }
 
-        for (String product : restaurantProducts.keySet()) {
+        for (String id : restaurantProducts.keySet()) {
+            String productName = restaurantProducts.get(id).get("name").toString();
             int i = 1;
             TableRow tbrow = new TableRow(getContext());
             TextView tv1 = new TextView(getContext());
@@ -206,16 +216,31 @@ public class ProductsTabFragment extends Fragment {
             tv1.setTextColor(Color.DKGRAY);
             tv1.setGravity(Gravity.LEFT);
             tv1.setTextSize(20);
-            tv1.setText(product);
+            tv1.setText(productName);
             deleteIcon.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_action_remove, null));
             deleteIcon.setMaxWidth(1);
             deleteIcon.setPadding(3,3,3,3);
             deleteIcon.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    String productId = null;
                     TableRow tableRow = (TableRow) view.getParent();
+                    String productName = ((TextView) tableRow.getChildAt(1)).getText().toString();
+                    DataSnapshot parentRestaurant = dbSnapshot.child(selectedClient);
+                    for (DataSnapshot child : parentRestaurant.getChildren()){
+                        if (child.child("name").getValue().toString().equals(productName)){
+                            productId = child.getKey();
+                            productName = child.child("name").getValue().toString();
+                        }
+                    }
+
+                    if (productId == null) {
+                        Toast.makeText(getActivity(), "Product Not Found!",
+                                Toast.LENGTH_LONG).show();
+                        return;
+                    }
                     salesTable.removeView(tableRow);
-                    krsRef.child("products").child(selectedClient).child(((TextView) tableRow.getChildAt(1)).getText().toString()).removeValue();
+                    krsRef.child("products").child(selectedClient).child(productId).removeValue();
                 }
             });
             tbrow.addView(deleteIcon);

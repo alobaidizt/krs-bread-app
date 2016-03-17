@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 
 public class ProductEditFragment extends Fragment {
@@ -76,7 +77,7 @@ public class ProductEditFragment extends Fragment {
 
 //        Firebase.setAndroidContext(getActivity());
         krsRef = helpers.getFirebase();
-        krsRef.child("products").addValueEventListener(new ValueEventListener() {
+        krsRef.child("restaurants").addValueEventListener(new ValueEventListener() {
 
             @Override
             public void onDataChange(DataSnapshot snapshot) {
@@ -157,15 +158,34 @@ public class ProductEditFragment extends Fragment {
 
 
     public void addProduct(View view) {
-        if (inputPrice.getText().toString().isEmpty()) {
-            Toast.makeText(getActivity().getApplicationContext(), "Value not Entered", Toast.LENGTH_SHORT).show();
+        if (inputPrice.getText().toString() == null || inputPrice.getText().toString().isEmpty()) {
+            Toast.makeText(getActivity().getApplicationContext(), "No Proper Price Entered", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Double price;
+        try {
+            price = Double.parseDouble(inputPrice.getText().toString());
+        } catch (NumberFormatException e) {
+            Toast.makeText(getActivity().getApplicationContext(), "No Proper Price Entered", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String name = inputName.getText().toString();
+//        name  = name.replaceAll("[\\$\\#\\[\\]\\.\\/]","%");
+
+        if (name == null || name.isEmpty()) {
+            Toast.makeText(getActivity().getApplicationContext(), "Please Enter Product Name", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        Firebase products = krsRef.child("products").child(selectedRestaurant).child(inputName.getText().toString());
+        if (selectedRestaurant == null || selectedRestaurant.isEmpty()) {
+            Toast.makeText(getActivity().getApplicationContext(), "Client Entered Not Found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Firebase products = krsRef.child("products").child(selectedRestaurant).push();
         Map<Object, Object> productDetails = new HashMap<Object, Object>();
-        productDetails.put("name", inputName.getText().toString());
-        productDetails.put("price", Double.parseDouble(inputPrice.getText().toString()));
+        productDetails.put("name", name);
+        productDetails.put("price", price);
         products.setValue(productDetails);
         Toast.makeText(getActivity().getApplicationContext(), "Product Added to " + selectedRestaurant + "!", Toast.LENGTH_SHORT).show();
 
@@ -179,6 +199,12 @@ public class ProductEditFragment extends Fragment {
     private void setRestaurantList() {
         restaurantLabels = new ArrayList<String>();
         HashMap<String, HashMap> data = (HashMap) dbSnapshot.getValue();
+
+        if (data == null) {
+            Toast.makeText(getActivity(), R.string.add_restaurant_validator,
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
         for (String restaurant : data.keySet()) {
             restaurantLabels.add(restaurant);
         }
