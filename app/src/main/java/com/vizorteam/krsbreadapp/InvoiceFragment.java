@@ -52,8 +52,10 @@ public class InvoiceFragment extends Fragment {
     private ArrayList<String> restaurantLabels;
     private ArrayList<String> products;
     private HashMap<String, Double> productPriceHash;
-    DataSnapshot dbSnapshot;
-    String selectedRestaurant;
+    private DataSnapshot dbSnapshot;
+    private DataSnapshot dbRestaurantsSnapshot;
+    private String selectedRestaurant;
+    private String selectedRestaurantId;
     private ArrayList<ArrayList<String>> recieptData;
     private double invoiceTotal;
     private int invoiceNum;
@@ -79,6 +81,16 @@ public class InvoiceFragment extends Fragment {
         krsRef = helpers.getFirebase();
         routeString = helpers.getRouteString(getContext());
 
+        krsRef.child("restaurants").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                dbRestaurantsSnapshot = snapshot;
+            }
+            @Override
+            public void onCancelled(FirebaseError error) {
+            }
+
+        });
         krsRef.child("products").addValueEventListener(new ValueEventListener() {
 
             @Override
@@ -116,6 +128,11 @@ public class InvoiceFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View arg1, int pos, long id) {
                 selectedRestaurant = (String) parent.getItemAtPosition(pos);
+                    for (DataSnapshot child : dbRestaurantsSnapshot.getChildren()) {
+                        if (child.child("name").getValue().toString().equals(selectedRestaurant)){
+                            selectedRestaurantId = child.getKey();
+                        }
+                    }
                 updateData();
             }
         });
@@ -242,7 +259,7 @@ public class InvoiceFragment extends Fragment {
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_spinner_dropdown_item, products);
         dropDown.setAdapter(adapter);
-        dropDown.setOnItemSelectedListener(new productWatcher(t3v));
+        dropDown.setOnItemSelectedListener(new productWatcher(t3v, et, t4v));
         et.addTextChangedListener(new qtyWatcher(et, t4v, t3v));
         til.addView(et);
 
@@ -258,17 +275,30 @@ public class InvoiceFragment extends Fragment {
         invoiceTable.addView(tbrow);
     }
     private class productWatcher implements AdapterView.OnItemSelectedListener {
-        TextView tview;
-        public productWatcher(TextView t3v) {
-           this.tview = t3v;
+        TextView priceView;
+        TextView qtyView;
+        TextView totalView;
+        public productWatcher(TextView priceView, EditText qtyView, TextView totalView) {
+            this.priceView = priceView;
+            this.qtyView = qtyView;
+            this.totalView = totalView;
         }
 
         @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            double quantity;
                 String bread = parent.getItemAtPosition(position).toString();
                 if (productPriceHash.get(bread) == null) {return;}
                 double price = productPriceHash.get(bread);
-                tview.setText("$" + price);
+                priceView.setText("$" + price);
+                if (qtyView.getText() == null) {return;}
+                if (qtyView.getText().toString().isEmpty()) {
+                    quantity = 0;
+                } else {
+                    quantity = Double.parseDouble(qtyView.getText().toString());
+                }
+                double total = quantity*price;
+                totalView.setText("$" + String.format("%.2f", total));
             }
 
             @Override
@@ -335,7 +365,8 @@ public class InvoiceFragment extends Fragment {
         }
 
         for (String restaurant : data.keySet()) {
-            restaurantLabels.add(restaurant);
+            String restaurantName = dbRestaurantsSnapshot.child(restaurant).child("name").getValue().toString();
+            restaurantLabels.add(restaurantName);
         }
 
         ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<String>
@@ -352,7 +383,7 @@ public class InvoiceFragment extends Fragment {
         }
 
         products = new ArrayList<String>();
-        HashMap<String, HashMap> restaurantProducts = (HashMap) dbSnapshot.child(selectedRestaurant).getValue();
+        HashMap<String, HashMap> restaurantProducts = (HashMap) dbSnapshot.child(selectedRestaurantId).getValue();
         if (restaurantProducts == null) {
             return;
         }
@@ -554,7 +585,7 @@ public class InvoiceFragment extends Fragment {
                 }
 
             }
-            DataSnapshot parentRestaurant = dbSnapshot.child(selectedRestaurant);
+            DataSnapshot parentRestaurant = dbSnapshot.child(selectedRestaurantId);
             for (DataSnapshot child : parentRestaurant.getChildren()){
                 if (child.child("name").getValue().toString().equals(productName)){
                     productId = child.getKey();

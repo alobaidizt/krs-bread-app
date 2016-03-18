@@ -49,6 +49,7 @@ public class RestaurntEditFragment extends Fragment {
     private EditText inputName, inputAddress, inputPhone;
     private TextInputLayout inputLayoutName, inputLayoutAddress, inputLayoutPhone;
     private Button btnSignUp;
+    private DataSnapshot dbSnapshot;
     Firebase krsRef;
 
     public RestaurntEditFragment() {
@@ -86,7 +87,7 @@ public class RestaurntEditFragment extends Fragment {
         krsRef.child("restaurants").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
-                Object data = snapshot.getValue();  //prints "Do you have data? You'll love Firebase."
+                dbSnapshot = snapshot;
             }
             @Override public void onCancelled(FirebaseError error) { }
         });
@@ -181,9 +182,18 @@ public class RestaurntEditFragment extends Fragment {
         String name = inputName.getText().toString();
         String address = inputAddress.getText().toString();
         String phone = inputPhone.getText().toString();
-        Restaurant restaurant = new Restaurant(name, address, phone);
+        Restaurant restaurantDetails = new Restaurant(name, address, phone);
+        Firebase restaurantRef = null;
 
-        krsRef.child("restaurants").child(name).setValue(restaurant);
+        for (DataSnapshot child : dbSnapshot.getChildren()) {
+            if (child.child("name").getValue().toString().equals(name)) {
+                restaurantRef = child.getRef();
+            }
+        }
+        if (restaurantRef == null) {
+            restaurantRef = krsRef.child("restaurants").push();
+        }
+        restaurantRef.setValue(restaurantDetails);
         Toast.makeText(getActivity().getApplicationContext(), "Restaurant Added!", Toast.LENGTH_SHORT).show();
     }
 

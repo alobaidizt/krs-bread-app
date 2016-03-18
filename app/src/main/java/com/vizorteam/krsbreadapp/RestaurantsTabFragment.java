@@ -14,6 +14,7 @@ import android.widget.ImageButton;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.FirebaseError;
@@ -100,23 +101,24 @@ public class RestaurantsTabFragment extends Fragment {
         }
             salesTable.removeAllViews();
 
-            HashMap<String, HashMap> restaurantProducts = null;
+            HashMap<String, HashMap> restaurants = null;
             if (dbSnapshot != null) {
-                restaurantProducts = (HashMap) dbSnapshot.getValue();
+                restaurants = (HashMap) dbSnapshot.getValue();
             }
-            if (restaurantProducts == null) {
+            if (restaurants == null) {
                 return;
             }
 
-            for (String product : restaurantProducts.keySet()) {
+            for (String restaurantId : restaurants.keySet()) {
                 int i = 1;
+                String restaurantName = restaurants.get(restaurantId).get("name").toString();
                 TableRow tbrow = new TableRow(getContext());
                 TextView tv1 = new TextView(getContext());
                 ImageButton deleteIcon = new ImageButton(getContext());
                 tv1.setTextColor(Color.DKGRAY);
                 tv1.setGravity(Gravity.LEFT);
                 tv1.setTextSize(20);
-                tv1.setText(product);
+                tv1.setText(restaurantName);
                 deleteIcon.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_action_remove, null));
                 deleteIcon.setMaxWidth(1);
                 deleteIcon.setPadding(3,3,3,3);
@@ -125,9 +127,20 @@ public class RestaurantsTabFragment extends Fragment {
                     public void onClick(View view) {
                         TableRow tableRow = (TableRow) view.getParent();
                         String restaurantName = ((TextView) tableRow.getChildAt(1)).getText().toString();
+                        String restaurantId = null;
+                        for (DataSnapshot child : dbSnapshot.getChildren()) {
+                            if (child.child("name").getValue().toString().equals(restaurantName)){
+                                restaurantId = child.getKey();
+                            }
+                        }
+                        if (restaurantId == null) {
+                            Toast.makeText(getActivity(), "Restaurant Not Found",
+                                    Toast.LENGTH_LONG).show();
+                            return;
+                        }
                         salesTable.removeView(tableRow);
-                        helpers.getFirebase().child("restaurants").child(restaurantName).removeValue();
-                        helpers.getFirebase().child("products").child(restaurantName).removeValue();
+                        helpers.getFirebase().child("restaurants").child(restaurantId).removeValue();
+                        helpers.getFirebase().child("products").child(restaurantId).removeValue();
                     }
                 });
                 tbrow.addView(deleteIcon);

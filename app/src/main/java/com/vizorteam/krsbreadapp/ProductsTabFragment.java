@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.res.ResourcesCompat;
 import android.view.Gravity;
@@ -15,9 +14,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -30,49 +27,31 @@ import com.firebase.client.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 
 public class ProductsTabFragment extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
 
-    String selectedRoute;
     private View fragmentView;
-    private double invoiceTotal;
-    private int invoiceNum;
     private String selectedClient;
-    private Spinner routes;
-    private MainActivity mainActivity;
-    DataSnapshot dbSnapshot;
-    private List<String> routesList;
+    private String selectedClientId;
+    private DataSnapshot dbSnapshot;
+    private DataSnapshot dbRestaurantsSnapshot;
     TableLayout salesTable;
 
-    private EditText inputName, inputPrice;
-    private TextInputLayout inputLayoutName, inputLayoutPrice;
     private Firebase krsRef;
     private ArrayList<String> clientsLabels;
-    private ArrayList<Object> restaurantValues;
     AutoCompleteTextView restaurants;
 
     private OnFragmentInteractionListener mListener;
 
     public ProductsTabFragment() {
-        // Required empty public constructor
     }
 
     // TODO: Rename and change types and number of parameters
     public static ProductsTabFragment newInstance(String param1, String param2) {
         ProductsTabFragment fragment = new ProductsTabFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
         fragment.setArguments(args);
         return fragment;
     }
@@ -80,12 +59,18 @@ public class ProductsTabFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
 
         krsRef = helpers.getFirebase();
+        krsRef.child("restaurants").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                dbRestaurantsSnapshot = snapshot;
+            }
+            @Override
+            public void onCancelled(FirebaseError error) {
+            }
+
+        });
         krsRef.child("products").addValueEventListener(new ValueEventListener() {
 
             @Override
@@ -98,13 +83,12 @@ public class ProductsTabFragment extends Fragment {
             public void onCancelled(FirebaseError error) {
             }
 
-            });
+        });
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         fragmentView = inflater.inflate(R.layout.fragment_products_tab, container, false);
         restaurants = (AutoCompleteTextView)
                 fragmentView.findViewById(R.id.autoCompleteTextView1);
@@ -122,6 +106,11 @@ public class ProductsTabFragment extends Fragment {
             @Override
             public void onItemClick(AdapterView<?> parent, View arg1, int pos, long id) {
                 selectedClient = (String) parent.getItemAtPosition(pos);
+                for (DataSnapshot child : dbRestaurantsSnapshot.getChildren()) {
+                    if (child.child("name").getValue().toString().equals(selectedClient)){
+                        selectedClientId = child.getKey();
+                    }
+                }
                 updateData();
             }
         });
@@ -152,16 +141,6 @@ public class ProductsTabFragment extends Fragment {
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
     public interface OnFragmentInteractionListener {
         void onFragmentInteraction(Uri uri);
     }
@@ -171,7 +150,7 @@ public class ProductsTabFragment extends Fragment {
                 fragmentView.findViewById(R.id.autoCompleteTextView1);
 
         clientsLabels = new ArrayList<String>();
-        HashMap<String, HashMap> data = (HashMap) dbSnapshot.getValue();
+        HashMap<String, HashMap> data = (HashMap) dbRestaurantsSnapshot.getValue();
 
         if (data == null) {
             Toast.makeText(getActivity().getBaseContext(), R.string.products_validator,
@@ -179,9 +158,11 @@ public class ProductsTabFragment extends Fragment {
             return;
         }
         for (String restaurant : data.keySet()) {
-            clientsLabels.add(restaurant);
+            String restaurantName = data.get(restaurant).get("name").toString();
+            if (restaurantName != null) {
+                clientsLabels.add(restaurantName);
+            }
         }
-
 
         ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<String>
                 (getContext(),android.R.layout.select_dialog_item, clientsLabels);
@@ -199,7 +180,7 @@ public class ProductsTabFragment extends Fragment {
 
         HashMap<String, HashMap> restaurantProducts = null;
         if (dbSnapshot != null || selectedClient != null) {
-            restaurantProducts = (HashMap) dbSnapshot.child(selectedClient).getValue();
+            restaurantProducts = (HashMap) dbSnapshot.child(selectedClientId).getValue();
         }
         if (restaurantProducts == null) {
             Toast.makeText(getActivity(), R.string.products_validator,
@@ -226,7 +207,7 @@ public class ProductsTabFragment extends Fragment {
                     String productId = null;
                     TableRow tableRow = (TableRow) view.getParent();
                     String productName = ((TextView) tableRow.getChildAt(1)).getText().toString();
-                    DataSnapshot parentRestaurant = dbSnapshot.child(selectedClient);
+                    DataSnapshot parentRestaurant = dbSnapshot.child(selectedClientId);
                     for (DataSnapshot child : parentRestaurant.getChildren()){
                         if (child.child("name").getValue().toString().equals(productName)){
                             productId = child.getKey();
@@ -240,7 +221,7 @@ public class ProductsTabFragment extends Fragment {
                         return;
                     }
                     salesTable.removeView(tableRow);
-                    krsRef.child("products").child(selectedClient).child(productId).removeValue();
+                    krsRef.child("products").child(selectedClientId).child(productId).removeValue();
                 }
             });
             tbrow.addView(deleteIcon);
