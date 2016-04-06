@@ -39,6 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -368,6 +369,7 @@ public class InvoiceFragment extends Fragment {
             String restaurantName = dbRestaurantsSnapshot.child(restaurant).child("name").getValue().toString();
             restaurantLabels.add(restaurantName);
         }
+        Collections.sort(restaurantLabels);
 
         ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<String>
                 (getContext(),android.R.layout.select_dialog_item, restaurantLabels);
@@ -395,6 +397,7 @@ public class InvoiceFragment extends Fragment {
                 products.add(productName);
                 productPriceHash.put(productName, price);
             }
+            Collections.sort(products);
         }
 
 

@@ -33,14 +33,15 @@ public class AdminSalesFragment extends Fragment {
 
     private OnFragmentInteractionListener mListener;
 
-    String selectedRoute;
+    private String selectedRoute;
     private View fragmentView;
-    private Spinner routes;
+    private Spinner routesDropdown;
     private double salesTotal;
-    DataSnapshot dbSnapshot;
-    private List<String> routesList;
-    TableLayout salesTable;
+    private DataSnapshot dbSnapshot;
+    private TableLayout salesTable;
     private ArrayList<ArrayList<String>> salesData;
+
+    private final List<String> routesList = Arrays.asList("A","B","C","D","E","F","G","H");
 
     public AdminSalesFragment() {
     }
@@ -75,21 +76,18 @@ public class AdminSalesFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_admin_sales, container, false);
-        fragmentView = view;
-        initTable(view);
+        fragmentView = inflater.inflate(R.layout.fragment_admin_sales, container, false);
+        initTable(fragmentView);
 
-        routes = (Spinner)
-                fragmentView.findViewById(R.id.route_spinner);
+        routesDropdown = (Spinner) fragmentView.findViewById(R.id.route_spinner);
 
-        routesList = Arrays.asList("A","B","C","D","E","F","G","H");
         ArrayAdapter<String> routesAdapter = new ArrayAdapter<String>(getContext(),
                 R.layout.spinner_item, routesList);
 
-        routes.setAdapter(routesAdapter);
-        routes.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
+        routesDropdown.setAdapter(routesAdapter);
+        routesDropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
 
+            @Override
             public void onItemSelected(AdapterView<?> parent, View view, int pos,long id) {
                 selectedRoute = (String) parent.getItemAtPosition(pos);
                 updateData();
@@ -99,7 +97,7 @@ public class AdminSalesFragment extends Fragment {
             }
         });
 
-        Button clearBtn = (Button) view.findViewById(R.id.btn_clear_sales);
+        Button clearBtn = (Button) fragmentView.findViewById(R.id.btn_clear_sales);
         clearBtn.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -108,7 +106,7 @@ public class AdminSalesFragment extends Fragment {
             }
         });
 
-        Button btnPrint = (Button) view.findViewById(R.id.btn_print);
+        Button btnPrint = (Button) fragmentView.findViewById(R.id.btn_print);
         btnPrint.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -117,7 +115,7 @@ public class AdminSalesFragment extends Fragment {
             }
         });
 
-        return view;
+        return fragmentView;
     }
 
     public void onButtonPressed(Uri uri) {

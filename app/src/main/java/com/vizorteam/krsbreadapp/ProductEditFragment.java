@@ -26,6 +26,7 @@ import com.firebase.client.ValueEventListener;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -236,6 +237,7 @@ public class ProductEditFragment extends Fragment {
             String restaurantName = data.get(restaurant).get("name").toString();
             restaurantLabels.add(restaurantName);
         }
+        Collections.sort(restaurantLabels);
 
         ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<String>
                 (getContext(),android.R.layout.select_dialog_item, restaurantLabels);

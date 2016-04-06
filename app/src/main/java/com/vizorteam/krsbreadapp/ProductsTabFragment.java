@@ -26,6 +26,7 @@ import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 
@@ -162,6 +163,7 @@ public class ProductsTabFragment extends Fragment {
             if (restaurantName != null) {
                 clientsLabels.add(restaurantName);
             }
+            Collections.sort(clientsLabels);
         }
 
         ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<String>
