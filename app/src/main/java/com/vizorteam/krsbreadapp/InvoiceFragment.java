@@ -117,9 +117,13 @@ public class InvoiceFragment extends Fragment {
         restaurants = (AutoCompleteTextView)
                 fragmentView.findViewById(R.id.autoCompleteTextView1);
 
+        restaurants.setTextSize(25);
         restaurants.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                if (restaurantLabels.isEmpty()) {
+                    Toast.makeText(getActivity().getApplicationContext(), "No Clients Found for This Route", Toast.LENGTH_SHORT).show();
+                }
                 restaurants.showDropDown();
                 return false;
             }
@@ -139,6 +143,7 @@ public class InvoiceFragment extends Fragment {
         });
 
         invoiceLabel = (TextView) fragmentView.findViewById(R.id.invoice_num_label);
+        invoiceLabel.setTextSize(25);
 
         Button btnPrint = (Button) fragmentView.findViewById(R.id.btn_print);
         btnPrint.setOnClickListener(new View.OnClickListener() {
@@ -202,6 +207,8 @@ public class InvoiceFragment extends Fragment {
         TableRow tbrow0 = new TableRow(getContext());
         TextView tv0 = new TextView(getContext());
         tv0.setText(R.string.qty);
+        tv0.setGravity(Gravity.CENTER);
+        tv0.setTextSize(25);
         tv0.setTextColor(txtColor);
         TableLayout.LayoutParams pRowTop = new TableLayout.LayoutParams(
                 TableLayout.LayoutParams.MATCH_PARENT,
@@ -210,14 +217,20 @@ public class InvoiceFragment extends Fragment {
         tbrow0.addView(tv0);
         TextView tv1 = new TextView(getContext());
         tv1.setText(R.string.product);
+        tv1.setGravity(Gravity.CENTER);
+        tv1.setTextSize(25);
         tv1.setTextColor(txtColor);
         tbrow0.addView(tv1);
         TextView tv2 = new TextView(getContext());
         tv2.setText(R.string.price);
+        tv2.setGravity(Gravity.CENTER);
+        tv2.setTextSize(25);
         tv2.setTextColor(txtColor);
         tbrow0.addView(tv2);
         TextView tv3 = new TextView(getContext());
         tv3.setText(R.string.total);
+        tv3.setGravity(Gravity.CENTER);
+        tv3.setTextSize(25);
         tv3.setTextColor(txtColor);
         tbrow0.addView(tv3);
         invoiceTable.addView(tbrow0, pRowTop);
@@ -242,7 +255,7 @@ public class InvoiceFragment extends Fragment {
         TextView t4v = new TextView(getContext());
         EditText et = new EditText(getContext());
         ImageButton deleteIcon = new ImageButton(getContext());
-        deleteIcon.setBackground(ResourcesCompat.getDrawable(getResources(),R.drawable.ic_action_remove, null));
+        deleteIcon.setBackground(ResourcesCompat.getDrawable(getResources(), R.drawable.ic_action_remove, null));
         deleteIcon.setMaxWidth(1);
         deleteIcon.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -252,13 +265,17 @@ public class InvoiceFragment extends Fragment {
             }
         });
         Spinner dropDown = new Spinner(getContext());
-        dropDown.setLayoutMode(Spinner.MODE_DROPDOWN);
+//        AutoCompleteTextView dropDown = (AutoCompleteTextView) new AutoCompleteTextView(getContext());
+//                fragmentView.findViewById(R.id.autoCompleteTextView1);
+//        dropDown.setLayoutMode(Spinner.MODE_DROPDOWN);
+        dropDown.setLayoutMode(Spinner.FOCUSABLES_TOUCH_MODE);
         et.setHint(" Num ");
+        et.setTextSize(20);
         et.setTextColor(Color.DKGRAY);
         et.setGravity(Gravity.CENTER);
         et.setInputType(InputType.TYPE_CLASS_NUMBER);
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_spinner_dropdown_item, products);
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(getContext(),  R.layout.spinner_item, products);
         dropDown.setAdapter(adapter);
         dropDown.setOnItemSelectedListener(new productWatcher(t3v, et, t4v));
         et.addTextChangedListener(new qtyWatcher(et, t4v, t3v));
@@ -267,9 +284,11 @@ public class InvoiceFragment extends Fragment {
         tbrow.addView(til);
         tbrow.addView(dropDown);
         t3v.setTextColor(Color.DKGRAY);
+        t3v.setTextSize(25);
         t3v.setGravity(Gravity.CENTER);
         tbrow.addView(t3v);
         t4v.setTextColor(Color.DKGRAY);
+        t4v.setTextSize(25);
         t4v.setGravity(Gravity.CENTER);
         tbrow.addView(t4v);
         tbrow.addView(deleteIcon);
@@ -357,7 +376,7 @@ public class InvoiceFragment extends Fragment {
     private void setRestaurantList() {
 
         restaurantLabels = new ArrayList<String>();
-        HashMap<String, HashMap> data = (HashMap) dbSnapshot.getValue();
+        HashMap<String, HashMap> data = (HashMap) dbRestaurantsSnapshot.getValue();
 
         if (data == null) {
             Toast.makeText(getActivity(), "Add Product to a Client First",
@@ -365,9 +384,14 @@ public class InvoiceFragment extends Fragment {
             return;
         }
 
+        String route = helpers.getRouteString(getActivity().getBaseContext());
         for (String restaurant : data.keySet()) {
-            String restaurantName = dbRestaurantsSnapshot.child(restaurant).child("name").getValue().toString();
-            restaurantLabels.add(restaurantName);
+            if (data.get(restaurant).get("route") != null) {
+                if (data.get(restaurant).get("route").toString().equals(route)) {
+                    String restaurantName = data.get(restaurant).get("name").toString();
+                    restaurantLabels.add(restaurantName);
+                }
+            }
         }
         Collections.sort(restaurantLabels);
 

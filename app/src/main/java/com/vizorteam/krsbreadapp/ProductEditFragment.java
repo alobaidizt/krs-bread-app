@@ -52,6 +52,7 @@ public class ProductEditFragment extends Fragment {
     private ArrayAdapter<String> restaurantsAdapter;
     private String selectedRestaurant;
     private String selectedRestaurantId;
+    private String restaurantRoute;
     private DataSnapshot dbSnapshot;
     private DataSnapshot dbProductsSnapshot;
 
@@ -117,6 +118,10 @@ public class ProductEditFragment extends Fragment {
         restaurants.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                if (restaurantLabels.isEmpty()) {
+                    Toast.makeText(getActivity().getApplicationContext(), "No Clients Found for This Route", Toast.LENGTH_SHORT).show();
+                }
+
                 restaurants.showDropDown();
                 return false;
             }
@@ -130,6 +135,7 @@ public class ProductEditFragment extends Fragment {
                 for (DataSnapshot child : dbSnapshot.getChildren()) {
                     if (child.child("name").getValue().toString().equals(selectedRestaurant)) {
                         selectedRestaurantId = child.getKey();
+                        restaurantRoute = child.child("route").getValue().toString();
                     }
                 }
             }
@@ -214,6 +220,7 @@ public class ProductEditFragment extends Fragment {
         Map<Object, Object> productDetails = new HashMap<Object, Object>();
         productDetails.put("name", name);
         productDetails.put("price", price);
+        productDetails.put("route", restaurantRoute);
         productRef.setValue(productDetails);
         Toast.makeText(getActivity().getApplicationContext(), "Product Added to " + selectedRestaurant + "!", Toast.LENGTH_SHORT).show();
 
@@ -233,9 +240,14 @@ public class ProductEditFragment extends Fragment {
                     Toast.LENGTH_LONG).show();
             return;
         }
+        String route = helpers.getRouteString(getActivity().getBaseContext());
         for (String restaurant : data.keySet()) {
-            String restaurantName = data.get(restaurant).get("name").toString();
-            restaurantLabels.add(restaurantName);
+            if (data.get(restaurant).get("route") != null) {
+                if (data.get(restaurant).get("route").toString().equals(route)) {
+                    String restaurantName = data.get(restaurant).get("name").toString();
+                    restaurantLabels.add(restaurantName);
+                }
+            }
         }
         Collections.sort(restaurantLabels);
 

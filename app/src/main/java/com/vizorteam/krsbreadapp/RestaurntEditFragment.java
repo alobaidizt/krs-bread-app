@@ -12,17 +12,28 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
 import com.firebase.client.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 
 /**
@@ -50,7 +61,17 @@ public class RestaurntEditFragment extends Fragment {
     private TextInputLayout inputLayoutName, inputLayoutAddress, inputLayoutPhone;
     private Button btnSignUp;
     private DataSnapshot dbSnapshot;
+    private DataSnapshot dbProductsSnapshot;
     Firebase krsRef;
+    private Spinner routesDropdown;
+    private View fragmentView;
+    private String selectedRoute;
+    private ArrayList<String> restaurantLabels;
+    AutoCompleteTextView restaurants;
+    private String selectedRestaurant;
+    private String selectedRestaurantId;
+
+    private final List<String> routesList = Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H");
 
     public RestaurntEditFragment() {
         // Required empty public constructor
@@ -88,8 +109,20 @@ public class RestaurntEditFragment extends Fragment {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 dbSnapshot = snapshot;
+                setRestaurantList();
             }
             @Override public void onCancelled(FirebaseError error) { }
+        });
+        krsRef.child("products").addValueEventListener(new ValueEventListener() {
+
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                dbProductsSnapshot = snapshot;
+            }
+
+            @Override
+            public void onCancelled(FirebaseError error) {
+            }
         });
 
     }
@@ -98,17 +131,63 @@ public class RestaurntEditFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_restaurnt_edit, container, false);
+        fragmentView = inflater.inflate(R.layout.fragment_restaurnt_edit, container, false);
 
-        inputLayoutName = (TextInputLayout) view.findViewById(R.id.input_layout_name);
-        inputLayoutAddress = (TextInputLayout) view.findViewById(R.id.input_layout_address);
-        inputLayoutPhone = (TextInputLayout) view.findViewById(R.id.input_layout_phone);
-        inputName = (EditText) view.findViewById(R.id.restaurant_name);
-        inputAddress = (EditText) view.findViewById(R.id.input_address);
-        inputPhone = (EditText) view.findViewById(R.id.input_phone);
-        btnSignUp = (Button) view.findViewById(R.id.btn_add);
+        restaurants = (AutoCompleteTextView)
+                fragmentView.findViewById(R.id.autoCompleteTextView1);
 
-        inputName.addTextChangedListener(new MyTextWatcher(inputName));
+        restaurants.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                restaurants.showDropDown();
+                return false;
+            }
+        });
+
+
+        restaurants.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View arg1, int pos, long id) {
+                selectedRestaurant = (String) parent.getItemAtPosition(pos);
+                for (DataSnapshot child : dbSnapshot.getChildren()) {
+                    if (child.child("name").getValue().toString().equals(selectedRestaurant)) {
+                        selectedRestaurantId = child.getKey();
+                        inputAddress.setText(child.child("address").getValue().toString());
+                        inputPhone.setText(child.child("phone").getValue().toString());
+                        if (child.child("route").getValue() != null) {
+                            routesDropdown.setSelection(getIndexOfRoute(child.child("route").getValue().toString()));
+                        }
+                    }
+                }
+            }
+        });
+
+        routesDropdown = (Spinner) fragmentView.findViewById(R.id.route_spinner);
+
+        ArrayAdapter<String> routesAdapter = new ArrayAdapter<String>(getContext(),
+                R.layout.spinner_item, routesList);
+
+        routesDropdown.setAdapter(routesAdapter);
+        routesDropdown.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int pos,long id) {
+                selectedRoute = (String) parent.getItemAtPosition(pos);
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+//        inputLayoutName = (TextInputLayout) fragmentView.findViewById(R.id.input_layout_name);
+        inputLayoutAddress = (TextInputLayout) fragmentView.findViewById(R.id.input_layout_address);
+        inputLayoutPhone = (TextInputLayout) fragmentView.findViewById(R.id.input_layout_phone);
+//        inputName = (EditText) fragmentView.findViewById(R.id.restaurant_name);
+        inputAddress = (EditText) fragmentView.findViewById(R.id.input_address);
+        inputPhone = (EditText) fragmentView.findViewById(R.id.input_phone);
+        btnSignUp = (Button) fragmentView.findViewById(R.id.btn_add);
+
+//        inputName.addTextChangedListener(new MyTextWatcher(inputName));
         inputAddress.addTextChangedListener(new MyTextWatcher(inputAddress));
         inputPhone.addTextChangedListener(new MyTextWatcher(inputPhone));
 
@@ -120,7 +199,7 @@ public class RestaurntEditFragment extends Fragment {
             }
         });
 
-        return view;
+        return fragmentView;
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -179,15 +258,17 @@ public class RestaurntEditFragment extends Fragment {
             return;
         }
 
-        String name = inputName.getText().toString();
+        String name = restaurants.getText().toString();
         String address = inputAddress.getText().toString();
         String phone = inputPhone.getText().toString();
-        Restaurant restaurantDetails = new Restaurant(name, address, phone);
+        Restaurant restaurantDetails = new Restaurant(name, address, phone, selectedRoute);
         Firebase restaurantRef = null;
 
         for (DataSnapshot child : dbSnapshot.getChildren()) {
             if (child.child("name").getValue().toString().equals(name)) {
                 restaurantRef = child.getRef();
+                Log.d("logging", restaurantRef.getKey());
+
             }
         }
         if (restaurantRef == null) {
@@ -195,15 +276,23 @@ public class RestaurntEditFragment extends Fragment {
         }
         restaurantRef.setValue(restaurantDetails);
         Toast.makeText(getActivity().getApplicationContext(), "Restaurant Added!", Toast.LENGTH_SHORT).show();
+
+        for (DataSnapshot restaurant : dbProductsSnapshot.getChildren()) {
+            if (restaurant.getKey().equals(restaurantRef.getKey())) {
+                for (DataSnapshot product : restaurant.getChildren()) {
+
+                    Log.d("logging - product", product.getKey());
+                    krsRef.child("products").child(restaurantRef.getKey()).child(product.getKey()).child("route").setValue(selectedRoute);
+                }
+            }
+        }
     }
 
     private boolean validateName() {
-        if (inputName.getText().toString().trim().isEmpty()) {
-            inputLayoutName.setError(getString(R.string.err_msg_name));
-            requestFocus(inputName);
+        if (restaurants.getText().toString().trim().isEmpty()) {
+            restaurants.setError(getString(R.string.err_msg_name));
+            requestFocus(restaurants);
             return false;
-        } else {
-            inputLayoutName.setErrorEnabled(false);
         }
 
         return true;
@@ -247,6 +336,62 @@ public class RestaurntEditFragment extends Fragment {
         }
     }
 
+    private void setRestaurantList() {
+        restaurantLabels = new ArrayList<String>();
+        HashMap<String, HashMap> data = (HashMap) dbSnapshot.getValue();
+
+        if (data == null) {
+            Toast.makeText(getActivity(), R.string.add_restaurant_validator,
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+        for (String restaurant : data.keySet()) {
+            String restaurantName = data.get(restaurant).get("name").toString();
+            restaurantLabels.add(restaurantName);
+        }
+        Collections.sort(restaurantLabels);
+
+        ArrayAdapter<String> autoCompleteAdapter = new ArrayAdapter<String>
+                (getContext(),android.R.layout.select_dialog_item, restaurantLabels);
+
+        restaurants.setThreshold(0);
+        restaurants.setAdapter(autoCompleteAdapter);
+    }
+
+    private int getIndexOfRoute(String route) {
+        int index;
+        switch (route) {
+            case "A":
+                index = 0;
+                break;
+            case "B":
+                index = 1;
+                break;
+            case "C":
+                index = 2;
+                break;
+            case "D":
+                index = 3;
+                break;
+            case "E":
+                index = 4;
+                break;
+            case "F":
+                index = 5;
+                break;
+            case "G":
+                index = 6;
+                break;
+            case "H":
+                index = 7;
+                break;
+            default:
+                index = 0;
+                break;
+        }
+        return  index;
+    }
+
 
     private class MyTextWatcher implements TextWatcher {
 
@@ -264,9 +409,9 @@ public class RestaurntEditFragment extends Fragment {
 
         public void afterTextChanged(Editable editable) {
             switch (view.getId()) {
-                case R.id.restaurant_name:
-                    validateName();
-                    break;
+//                case R.id.restaurant_name:
+//                    validateName();
+//                    break;
                 case R.id.input_address:
                     validateAddress();
                     break;
@@ -280,11 +425,13 @@ public class RestaurntEditFragment extends Fragment {
         private String name;
         private String address;
         private String phone;
+        private String route;
         public Restaurant() {}
-        public Restaurant(String name, String address, String phone) {
+        public Restaurant(String name, String address, String phone, String route) {
             this.name = name;
             this.address = address;
             this.phone = phone;
+            this.route = route;
         }
         public String getName() {
             return name;
@@ -294,6 +441,9 @@ public class RestaurntEditFragment extends Fragment {
         }
         public String getPhone() {
             return phone;
+        }
+        public String getRoute() {
+            return route;
         }
     }
 
